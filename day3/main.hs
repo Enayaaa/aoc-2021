@@ -40,14 +40,10 @@ solve2 input = oxyGen * co2Gen
     filterF _ _ [a] = [a]
     filterF f pos xs
       | pos >= 0 || pos < max (length xs) (length filtering) =
-        filterF f (pos + 1) . mapMaybe (foo pos filtering) $ xs
+        filterF f (pos + 1) . filter (\x -> filtering !! pos == x !! pos) $ xs
       | otherwise = xs
       where
         filtering = f (length xs) xs
-
-    foo pos filtering seq
-      | filtering !! pos == seq !! pos = Just seq
-      | otherwise = Nothing
 
 main :: IO ()
 main = do
