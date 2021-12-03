@@ -34,11 +34,8 @@ solve2 input = oxyGen * co2Gen
   where
     inps = map toDigitArr input
     convert = toDec . head
-    oxyGen = convert $ filterOx 0 inps
-    co2Gen = convert $ filterCO2 0 inps
-
-    filterOx pos xs = filterF mostCommons pos xs
-    filterCO2 pos xs = filterF leastCommons pos xs
+    oxyGen = convert $ filterF mostCommons 0 inps
+    co2Gen = convert $ filterF leastCommons 0 inps
 
     filterF _ _ [a] = [a]
     filterF f pos xs
@@ -47,6 +44,7 @@ solve2 input = oxyGen * co2Gen
       | otherwise = xs
       where
         filtering = f (length xs) xs
+
     foo pos filtering seq
       | filtering !! pos == seq !! pos = Just seq
       | otherwise = Nothing
