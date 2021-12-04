@@ -25,7 +25,7 @@ splitOn' :: String -> String -> [String]
 splitOn' delim = split (dropDelims . dropBlanks $ oneOf delim)
 
 -- | groups five rows and converts elements to ints and zips together
---   with a boolean to indicate if the number is chosen or not.
+--   with a boolean to indicate if the number is marked or not.
 getTables :: [String] -> [Table]
 getTables =
   groupFive
@@ -67,7 +67,7 @@ getUnmarked =
     . filter (not . fst)
     . concat
 
--- | after how many will this table have bingo?
+-- | after how many steps will this table have bingo?
 winsAfter :: [Int] -> Table -> Int
 winsAfter rands t = foo 0 rands t
   where
@@ -81,22 +81,22 @@ winsAfter rands t = foo 0 rands t
 play :: Int -> [Int] -> Table -> Table
 play 0 _ t           = t
 play _ [] t          = t
-play n (r : rands) t = play (n -1) rands $ mark r t
+play n (r : rands) t = play (n - 1) rands $ mark r t
 
 solve1 :: [Int] -> [Table] -> Int
 solve1 rands tables = sum unmarked * lastCalled
   where
-    (t, n) = fromJust . find (\x -> snd x == minimum ns) $ zip tables ns
+    (t, n) = fromJust . find ((== minimum ns) . snd) $ zip tables ns
     ns = map (winsAfter rands) tables
     unmarked = getUnmarked . play n rands $ t
-    lastCalled = rands !! (n -1)
+    lastCalled = rands !! (n - 1)
 
 solve2 :: [Int] -> [Table] -> Int
 solve2 rands tables
-  | n < length rands = rands !! (n -1) * sum unmarked
+  | n < length rands = rands !! (n - 1) * sum unmarked
   | otherwise = error "no last winner found, maybe input is incorrect I'm not sure"
   where
-    (t, n) = fromJust . find (\x -> snd x == maximum ns) $ zip tables ns
+    (t, n) = fromJust . find ((== maximum ns) . snd) $ zip tables ns
     ns = map (winsAfter rands) tables
     unmarked = getUnmarked . play n rands $ t
 
