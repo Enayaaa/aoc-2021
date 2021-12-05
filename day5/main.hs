@@ -1,7 +1,7 @@
 {-
  - This is a pretty shitty solution according to me
  -
- - I first try to go the path of comparing each combination of pairs of lines
+ - I first tried to go the path of comparing each combination of pairs of lines
  - and see how many points they both intersect, this showed to be EXTREMELY
  - slow, I waited for 5 minutes before I tried to guess the complexity which
  - was something like O((n choose 2)*n^2) or something, idk, but it would've
