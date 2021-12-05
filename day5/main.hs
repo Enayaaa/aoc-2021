@@ -13,7 +13,6 @@
 
 import           Data.Char       (isSpace)
 import           Data.List.Split (dropBlanks, dropDelims, oneOf, split, splitOn)
-import           Data.Maybe      (fromJust, isJust)
 
 
 -- | splits, removes the delimeter and any other delimeter element
