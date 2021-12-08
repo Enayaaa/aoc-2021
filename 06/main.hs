@@ -2,8 +2,6 @@ import Data.List.Split
 
 -- Struggle day, overcomplicated alot before I got help with this
 
-count e = length . filter (==e)
-
 prepare :: String -> [Int]
 prepare = map read . splitOn ","
 
