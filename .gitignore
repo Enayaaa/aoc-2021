@@ -10,3 +10,7 @@
 # ignore ghc output
 **.hi
 **.o
+
+# ignore cabal stuff
+*/CHANGELOG.md
+*/dist-newstyle/
