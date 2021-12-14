@@ -1,58 +1,55 @@
-import Data.List.Split
-import qualified Data.Map as M
-import Data.List hiding (insert)
-import Data.Function (on)
-import qualified Data.Set as S
-import Data.Maybe
+import           Data.Function   (on)
+import           Data.List       (groupBy, maximumBy, minimumBy, sort)
+import           Data.List.Split (splitOn)
+import           Data.Map        (Map)
+import qualified Data.Map        as M
+import           Data.Maybe      (fromMaybe)
 
-prepare input = (template, M.fromList rules)
+type Template = String
+type Pair = String
+type Molecule = String
+type InsertionRule = (Pair, Molecule)
+
+
+step :: Map Pair Int -> Map Pair Int -> [InsertionRule] -> Map Pair Int
+step old new [] = new
+step old new (rule@(from,to):rules) = step old new' rules
+    where
+        n = old M.! from
+        new' = if n == 0
+            then new
+            else M.insertWith (+) (to++[b]) n
+             $ M.insertWith (+) (a:to) n
+             $ M.insertWith (flip (-)) from n new
+        (a:b:_) = from
+
+count :: Eq a => a -> [a] -> Int
+count e = length . filter (==e)
+
+prepare :: String -> (Template, [InsertionRule])
+prepare input = (template, rules)
     where (template:rulesStr:_) = splitOn "\n\n" input
           rules = map ((\(x:y:_) -> (x,y)) . splitOn " -> ") $ lines rulesStr
 
-insert :: M.Map String String -> String -> (Char,Char) -> String
-insert rules acc (a,b) = case M.lookup [a,b] rules of
-    Just x -> acc++x++[b]
-    Nothing -> acc++[b]
+clean :: M.Map a Int -> [(a, Int)]
+clean = filter ((>0) . snd) . M.toList
 
-step :: M.Map String String -> String -> String
-step rules template = foldl (insert rules) (take 1 template) xs
+solve :: Int -> Template -> [InsertionRule] -> Int
+solve n template rules = most - least
     where
-        xs = zip template (tail template)
+        -- Brace yourself
+        pairs' = M.fromList $ map (\l -> (l,count l pairs)) letters
+        pairs = zipWith (\a b -> [a, b]) template (tail template)
+        letters = [[a, b] | a <- ['A'..'Z'], b <- ['A'..'Z']]
+        res = clean . (!!n) $ iterate (\ps -> step ps ps rules) pairs'
+        xs' = M.insertWith (+) (last template) 1 xs
+        xs = M.fromList $ map (\gr -> (head (fst $ head gr),foldl (\c (_,n) -> n+c) 0 gr))
+            . groupBy (\(x:_,_) (y:_,_) -> x == y) $ sort res
+        (mostCommon, most) = maximumBy (compare `on` snd) $ M.toList xs'
+        (leastCommon, least) = minimumBy (compare `on` snd) $ M.toList xs'
 
-solve1 (template, rules) = res--length (last xs) - length (head xs)
-    where
-        res = (!! 2) $ iterate (step rules) template
-        xs = sortBy (compare `on` length) . group $ sort res
-
-insert' :: M.Map String String -> M.Map String Int -> M.Map String Int -> [(String, Int)] -> M.Map String Int
-insert' _ _ acc [] = acc
-insert' rules m acc (pair@(p@(a:b:_),count) : pairs) = case M.lookup p rules of
-    Just x -> insert' rules m (
-        M.insert (a:x) (ax+1) $
-        M.insert (x++[b]) (xb+1) $
-        M.insert p (ab-1) acc
-        ) pairs
-        where
-            ax = let ax' = M.lookup (a:x) acc in fromMaybe 0 ax'
-            xb = let xb' = M.lookup (x++[b]) acc in fromMaybe 0 xb'
-            ab = let ab' = M.lookup p acc in fromMaybe 0 ab'
-    Nothing -> insert' rules m acc pairs
-insert' _ _ _ _ = error "incorrect input"
-
---step' :: M.Map String String -> M.Map String Int -> M.Map String Int
-step' rules pairs = insert' rules pairs pairs (M.toList pairs)
-
-count e = length . filter (==e)
-
-solve2 (template, rules) = pairs
-    where
-        temp = map (\x -> (count x template, x)) $ nub template
-        -- pairs = zipWith (\a b -> [a, b]) template (tail template)
-        -- pairs' = foldl (\m x -> M.insert x (count x pairs) m) M.empty pairs
-        pairs = M.fromList [([a, b],0) | a <- ['A'..'Z'], b <- ['A'..'Z']]
-
-
+main :: IO ()
 main = do
     file <- readFile "test_input.txt"
-    --putStrLn $ "Part 1: "++(show . solve1 . prepare $ file)
-    putStrLn $ "Part 2: "++(show . solve2 . prepare $ file)
+    putStrLn $ "Part 1: "++(show . uncurry (solve 10) . prepare $ file)
+    putStrLn $ "Part 2: "++(show . uncurry (solve 40) . prepare $ file)
