@@ -4,7 +4,7 @@ import           Data.List       (sort, sortBy, transpose, (\\))
 import           Data.List.Split (splitOn)
 import           Data.Maybe      ()
 import qualified Data.Set        as S
-import           Debug.Trace     (trace)
+import           Debug.Trace
 
 type Vec = [Int]
 type Matrix3 = [Vec]
@@ -12,15 +12,18 @@ type Matrix3 = [Vec]
 parsePoint :: String -> Vec
 parsePoint = map read . splitOn ","
 
+prepare :: String -> [[Vec]]
 prepare = map (map parsePoint . tail . lines) . splitOn "\n\n"
 
+vecAdd :: Vec -> Vec -> Vec
 vecAdd = zipWith (+)
 
+vecTimes :: Int -> Vec -> Vec
 vecTimes c = map (*c)
 
-vecProd v1 v2 = sum $ zipWith (*) (map fromIntegral v1) v2
+dotProd v1 v2 = sum $ zipWith (*) (map fromIntegral v1) v2
 
-matrixProd m v = map (round . vecProd v) (transpose m)
+matrixProd m v = map (round . dotProd v) (transpose m)
 
 rotateX theta = matrixProd [[1,0,0], [0, cos theta, sin theta], [0, -sin theta, cos theta]]
 rotateY theta = matrixProd [[cos theta, 0, -sin theta], [0,1,0], [sin theta, 0, cos theta]]
@@ -42,7 +45,7 @@ orientAll ps = map (`map` ps) transforms
 distance a b = sqrt . sum . map (**2) $ zipWith (-) (map fromIntegral b) (map fromIntegral a)
 magnitude = distance (repeat 0)
 
-translateBy = zipWith (-)
+translateBy = zipWith (+)
 translateAllBy vec = map (translateBy vec)
 
 --solve1 :: [[Vec]] -> [[[Vec]]]
@@ -89,24 +92,11 @@ showlist xxs c = mapM_ (showRow c) xxs
 
 
 takeWhileInclusive :: (a -> Bool) -> [a] -> [a]
-takeWhileInclusive _ [] = []
-takeWhileInclusive p (x:xs) = x : if p x then takeWhileInclusive p xs
-                                         else []
+takeWhileInclusive _ []     = []
+takeWhileInclusive p (x:xs) = x : if p x then takeWhileInclusive p xs else []
 
 
 --insert e@((a,b),d) s = if S.notMember e S && S.notMember
-
-distanceMatches s as bs = pairs
-    where
-        pairs
-            -- = concat
-            -- . filter ((>=11) . length)
-            = map (takeWhile (\(a,b) -> abs (snd a - snd b) <= 0.00001) . zip pq . (`distancesFrom` bs) ) bs
-        pq = distancesFrom s as
-
-
-
-
 
 
 
@@ -118,10 +108,11 @@ sortByDistance = sortBy (compare `on` snd)
 count = 11
 
 
-getBeaconCoords as bs = ds--if null matches || length (last matches) < count then Nothing else Just $ zipWith (+) (vecTimes (-1) b) a
+getBeaconCoords as bs = head matches--if null matches then Nothing else Just sc
     where
-        --(((a,_),_),((b,_),_)) = head $ last matches
-        --matches = filter (not . null) $ concatMap (takeWhile (\(a,b) -> abs (snd b - snd a) < 0.00001)) ds
+        sc = zipWith (+) (vecTimes (-1) b) a
+        (((a,_),_),((b,_),_)) = head $ last matches
+        matches = filter (not . null) $ map (takeWhile (\(a,b) -> snd b == snd a)) ds
         ds = [zip (foo a (as\\[a])) (foo b (bs\\[b])) | a <- as, b <-bs]
         foo x xs = sortByDistance $ distancesFrom x xs
 
@@ -134,25 +125,17 @@ test xs = map (getBeaconCoords as) (orientAll bs)
 
 
 
+main :: IO ()
 main = do
-    --file <- readFile "test_input.txt"
+    file <- readFile "test_input.txt"
     --file <- readFile "input.txt"
     --let file = "
-    file <- readFile "sample.txt"
+    --file <- readFile "sample.txt"
     --let res = solve1 . prepare $ file
     --showlist res 'a'
     --putStrLn $ "Part 1 :" ++ (show . solve1 . prepare $ file)
     print (test . prepare $ file)
     --putStrLn $ "Part 2 :" ++ (show . solve2 . prepare $ file)
-
-
-
-
-
-
-
-
-
 
 
 
