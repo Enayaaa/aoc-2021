@@ -1,8 +1,10 @@
 {-# LANGUAGE FlexibleContexts #-}
-import Data.List.Split
-import Data.List
-import Data.Function
-import Debug.Trace
+import           Data.Function   (on)
+import           Data.List       (sort, sortBy, transpose, (\\))
+import           Data.List.Split (splitOn)
+import           Data.Maybe      ()
+import qualified Data.Set        as S
+import           Debug.Trace     (trace)
 
 type Vec = [Int]
 type Matrix3 = [Vec]
@@ -11,6 +13,10 @@ parsePoint :: String -> Vec
 parsePoint = map read . splitOn ","
 
 prepare = map (map parsePoint . tail . lines) . splitOn "\n\n"
+
+vecAdd = zipWith (+)
+
+vecTimes c = map (*c)
 
 vecProd v1 v2 = sum $ zipWith (*) (map fromIntegral v1) v2
 
@@ -25,21 +31,132 @@ orientations p = [rotateZ theta x | x <- orients, theta <- thetas]
     where thetas = [0,pi/2.0,pi,3.0*pi/2]
           orients = map (`rotateY` p) thetas ++ [rotateX (pi/2) p, rotateX (-pi/2) p]
 
-distance a b = sqrt . sum . map (**2) $ zipWith (-) (map fromIntegral a) (map fromIntegral b)
+orientAll :: [Vec] -> [[Vec]]
+orientAll ps = map (`map` ps) transforms
+    where
+        thetas = [0,pi/2.0,pi,3.0*pi/2]
+        rotations = [id, rotateY (pi/2), rotateY pi, rotateY (3*pi/2), rotateX (pi/2), rotateX (-pi/2)]
+        transforms = [rotateZ theta . f | f <- rotations, theta <- thetas]
+
+
+distance a b = sqrt . sum . map (**2) $ zipWith (-) (map fromIntegral b) (map fromIntegral a)
 magnitude = distance (repeat 0)
 
 translateBy = zipWith (-)
 translateAllBy vec = map (translateBy vec)
 
---solve1 [] = [[]]
-solve1 (x:xs) = zipWith (zipWith (-)) (translateAllBy z x) (translateAllBy y (head xs))
-    where y = minimumBy (compare `on` magnitude) $ head xs
-          z = minimumBy (compare `on` magnitude) x
+--solve1 :: [[Vec]] -> [[[Vec]]]
+solve1 xs = foo (head pairs)
+    where
+        pairs = [(a,b) | a <- xs, b <- xs, a /= b]
+
+foo (as,bs) = map sort $ filter (not . null) res
+    where
+        res = map (\b -> map (\s -> getUniques s (as\\[s]) b) as) (orientAll bs)
+
+getUniques s as bs = if null pairs then [] else absoluteB
+    where
+        absoluteB = map (zipWith (+) tr) bs
+        tr = zipWith (-) (fst p1) (fst p2)
+        (p1,p2) = head pairs
+        pairs
+            = concat
+            . filter ((>=11) . length)
+            $ map (takeWhile (\(a,b) -> snd a == snd b) . zip pq . (\x -> distancesFrom x (bs \\ [x]))) bs
+        pq = distancesFrom s as
+        distancesFrom x xs = sortBy (\a b -> compare (snd a) (snd b))
+            $ map (\p -> (p,distance x p)) xs
 
 solve2 = id
 
+showRow c xs = putStrLn (c : ':' : ' ' : unwords (map show xs))
+showlist xxs c = mapM_ (showRow c) xxs
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+takeWhileInclusive :: (a -> Bool) -> [a] -> [a]
+takeWhileInclusive _ [] = []
+takeWhileInclusive p (x:xs) = x : if p x then takeWhileInclusive p xs
+                                         else []
+
+
+--insert e@((a,b),d) s = if S.notMember e S && S.notMember
+
+distanceMatches s as bs = pairs
+    where
+        pairs
+            -- = concat
+            -- . filter ((>=11) . length)
+            = map (takeWhile (\(a,b) -> abs (snd a - snd b) <= 0.00001) . zip pq . (`distancesFrom` bs) ) bs
+        pq = distancesFrom s as
+
+
+
+
+
+
+
+
+distancesFrom x xs = sortBy (\a b -> compare (snd a) (snd b)) $ map (\p -> ((x,p),distance x p)) xs
+
+sortByDistance = sortBy (compare `on` snd)
+
+count = 11
+
+
+getBeaconCoords as bs = ds--if null matches || length (last matches) < count then Nothing else Just $ zipWith (+) (vecTimes (-1) b) a
+    where
+        --(((a,_),_),((b,_),_)) = head $ last matches
+        --matches = filter (not . null) $ concatMap (takeWhile (\(a,b) -> abs (snd b - snd a) < 0.00001)) ds
+        ds = [zip (foo a (as\\[a])) (foo b (bs\\[b])) | a <- as, b <-bs]
+        foo x xs = sortByDistance $ distancesFrom x xs
+
+test xs = map (getBeaconCoords as) (orientAll bs)
+    where
+        as = head xs
+        bs = head $ tail xs
+
+
+
+
+
 main = do
-    file <- readFile "test_input.txt"
+    --file <- readFile "test_input.txt"
     --file <- readFile "input.txt"
-    putStrLn $ "Part 1 :" ++ (show . solve1 . prepare $ file)
+    --let file = "
+    file <- readFile "sample.txt"
+    --let res = solve1 . prepare $ file
+    --showlist res 'a'
+    --putStrLn $ "Part 1 :" ++ (show . solve1 . prepare $ file)
+    print (test . prepare $ file)
     --putStrLn $ "Part 2 :" ++ (show . solve2 . prepare $ file)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
