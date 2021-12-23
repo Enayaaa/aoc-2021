@@ -1,3 +1,8 @@
+module Main where
+
+-- This code sadly doen't work as of now (its not fast enough for the real input)
+-- So I gave up and did both parts manually
+
 import Data.List.Split
 import Data.Char
 import qualified Data.Map as M
@@ -6,6 +11,7 @@ import Data.List
 import Debug.Trace
 import Data.Maybe
 import Data.Function
+import qualified Data.PQueue.Prio.Min as P
 
 data Amphipod = A | B | C | D deriving (Eq, Show, Ord)
 data Space = Occupied Amphipod | Open | Wall deriving (Eq, Show)
@@ -64,7 +70,6 @@ move m a@(l1, s1@(Occupied x)) b@(l2, s2)
     | isPathBlocked p m = Nothing
     | isInHallway l1 && isInHallway l2 = Nothing
     | snd l1 == snd l2 = Nothing
-    -- (isInHallway l1 && l2 `notElem` ps) || (isInHallway l1 && not (all (\v -> v == Wall || v==Open || v== Occupied x) room)) = Nothing
     | isInHallway l1 && not (isDone m (l2,s1)) = Nothing
     | not (isInHallway l2) && not (isDone m (l2,s1)) = Nothing
     | fst l2 == 2 && m M.! (3, snd l2) == Open = Nothing
@@ -97,17 +102,21 @@ isDone m ((r,c),Occupied a)
     ps = roomFor a
 isDone _ _ = error "calling isDone with non-amphipods"
 
-simulate :: (Int, Diagram) -> Maybe (Int, Diagram)
-simulate (c,m)
+simulate :: P.MinPQueue Int Diagram -> Maybe (Int, Diagram)
+simulate pq
     | all (isDone m) as = Just (c,m)
-    | null recur = Nothing
-    | otherwise = Just $ minimumBy (compare `on` fst) recur
+    --  null recur = Nothing
+    | otherwise = let res = simulate (foldl (\q (c',m') -> P.insert c' m' q) pq' xs) in
+        case res of
+            Nothing -> Nothing
+            a -> a
     where
-    recur = mapMaybe (\(c',m') -> simulate (c+c', m')) xs
-    xs = sortBy (compare `on` fst) $ mapMaybe (uncurry (move m)) ys
+    --recur = mapMaybe (\(c',m') -> simulate (c+c', m')) xs
+    xs = map (\(c',m') -> (c+c',m')) $ mapMaybe (uncurry (move m)) ys
     ys = [(a,b) | a <- as, b <- empty]
     empty = M.toList $ emptySpots m
     as = M.toList $ amphipods m
+    ((c,m), pq') = P.deleteFindMin pq
 
 isAmphipod (Occupied _) = True
 isAmphipod _ = False
@@ -117,7 +126,7 @@ toAmphipod _ = error "not an amphipod"
 
 solve1 m = --trace (showDiagram m') 0--isDone m' ((2,9), Occupied D)
     --move m' ((1,10), Occupied D) ((2,9), Occupied D)
-    {-(\(Just x) -> trace ('\n':showDiagram (snd x)) x ) $-} fst . fromJust $ simulate (0,m')
+    {-(\(Just x) -> trace ('\n':showDiagram (snd x)) x ) $-} fst . fromJust $ simulate (P.singleton 0 m')
     --map (map (map simulate . simulate) . simulate) (simulate (0,m))
     --uncurry traceShow $ move m (head start) (head empty)
     where
@@ -131,8 +140,8 @@ solve2 = id
 
 main = do
     --file <- readFile "test_input.txt"
-    file <- readFile "sample.txt"
-    --file <- readFile "input.txt"
+    --file <- readFile "sample.txt"
+    file <- readFile "input.txt"
     putStrLn $ "Part 1 :" ++ (show . solve1 . prepare $ file)
     --putStrLn $ "Part 2 :" ++ (show . solve2 . prepare $ file)
     --putStrLn . showDiagram . solve1 . prepare $ file
