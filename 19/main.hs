@@ -2,7 +2,7 @@
 import           Data.Function   (on)
 import           Data.List       (sort, sortBy, transpose, (\\))
 import           Data.List.Split (splitOn)
-import           Data.Maybe      ()
+import           Data.Maybe      (isJust)
 import qualified Data.Set        as S
 import           Debug.Trace
 
@@ -17,6 +17,9 @@ prepare = map (map parsePoint . tail . lines) . splitOn "\n\n"
 
 vecAdd :: Vec -> Vec -> Vec
 vecAdd = zipWith (+)
+
+vecSub :: Vec -> Vec -> Vec
+vecSub = zipWith (-)
 
 vecTimes :: Int -> Vec -> Vec
 vecTimes c = map (*c)
@@ -43,85 +46,90 @@ orientAll ps = map (`map` ps) transforms
 
 
 distance a b = sqrt . sum . map (**2) $ zipWith (-) (map fromIntegral b) (map fromIntegral a)
-magnitude = distance (repeat 0)
-
-translateBy = zipWith (+)
-translateAllBy vec = map (translateBy vec)
-
---solve1 :: [[Vec]] -> [[[Vec]]]
-solve1 xs = foo (head pairs)
-    where
-        pairs = [(a,b) | a <- xs, b <- xs, a /= b]
-
-foo (as,bs) = map sort $ filter (not . null) res
-    where
-        res = map (\b -> map (\s -> getUniques s (as\\[s]) b) as) (orientAll bs)
-
-getUniques s as bs = if null pairs then [] else absoluteB
-    where
-        absoluteB = map (zipWith (+) tr) bs
-        tr = zipWith (-) (fst p1) (fst p2)
-        (p1,p2) = head pairs
-        pairs
-            = concat
-            . filter ((>=11) . length)
-            $ map (takeWhile (\(a,b) -> snd a == snd b) . zip pq . (\x -> distancesFrom x (bs \\ [x]))) bs
-        pq = distancesFrom s as
-        distancesFrom x xs = sortBy (\a b -> compare (snd a) (snd b))
-            $ map (\p -> (p,distance x p)) xs
-
-solve2 = id
-
-showRow c xs = putStrLn (c : ':' : ' ' : unwords (map show xs))
-showlist xxs c = mapM_ (showRow c) xxs
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-takeWhileInclusive :: (a -> Bool) -> [a] -> [a]
-takeWhileInclusive _ []     = []
-takeWhileInclusive p (x:xs) = x : if p x then takeWhileInclusive p xs else []
-
-
---insert e@((a,b),d) s = if S.notMember e S && S.notMember
-
-
-
 
 distancesFrom x xs = sortBy (\a b -> compare (snd a) (snd b)) $ map (\p -> ((x,p),distance x p)) xs
 
-sortByDistance = sortBy (compare `on` snd)
+--sortByDistance = sortBy (compare `on` snd)
 
-count = 11
+count = 12
+
+{-
+[[404,-588,-901]], fromList (
+fromList [
+[326,483,1331],
+[378,391,1186],
+[404,-760,402],
+[430,301,1323],
+[447,-806,410],
+[464,-828,1234],
+[528,-643,409],
+[547,-785,1267],
+[566,-955,1193],
+[580,162,-57],
+[618,133,-85],
+[720,196,-103],
+[1038,-250,694],
+[1455,-978,261],
+[1461,-748,1517],
+[1469,-1086,174],
+[1473,618,1401],
+[1488,249,287],
+[1497,665,1595],
+[1524,216,293],
+[1562,-802,1424],
+[1593,224,229],
+[1599,583,1498],
+[1609,-1075,213],
+[1633,-762,1593]]
+
+,fromList [
+[-892,524,684],
+[-876,649,763],
+[-838,591,734],
+[-789,900,-551],
+[-689,845,-530],
+[-661,-816,-575],
+[-618,-824,-621],
+[-584,868,-557],
+[-537,-823,-458],
+[-485,-357,347],
+[-447,-329,318],
+[-345,-311,381],
+[7,-33,-71],
+[390,-675,-793],
+[404,-588,-901],
+[423,-701,434],
+[443,580,662],
+[455,729,728],
+[459,-707,401],
+[474,580,667],
+[528,-643,409],
+[544,-627,-890],
+[553,345,-567],
+[564,392,-477],
+[630,319,-379]]
+)
+-}
 
 
-getBeaconCoords as bs = head matches--if null matches then Nothing else Just sc
+checkIntersection as bs offset = traceShow (translated, origin) intersection
+{-
+    | S.size intersection >= count = Just offset
+    | otherwise = Nothing
+    -}
     where
-        sc = zipWith (+) (vecTimes (-1) b) a
-        (((a,_),_),((b,_),_)) = head $ last matches
-        matches = filter (not . null) $ map (takeWhile (\(a,b) -> snd b == snd a)) ds
-        ds = [zip (foo a (as\\[a])) (foo b (bs\\[b])) | a <- as, b <-bs]
-        foo x xs = sortByDistance $ distancesFrom x xs
+        translated = S.fromList $ map (vecAdd offset) bs
+        origin = S.fromList as
+        intersection = S.intersection origin translated
 
-test xs = map (getBeaconCoords as) (orientAll bs)
+pairup as bs = map (checkIntersection as bs) offsets
+    where
+        offsets = zipWith vecSub as bs
+
+test xs = map (pairup as) (orientAll bs)
     where
         as = head xs
         bs = head $ tail xs
-
-
 
 
 
@@ -129,13 +137,12 @@ main :: IO ()
 main = do
     file <- readFile "test_input.txt"
     --file <- readFile "input.txt"
-    --let file = "
     --file <- readFile "sample.txt"
-    --let res = solve1 . prepare $ file
-    --showlist res 'a'
+
     --putStrLn $ "Part 1 :" ++ (show . solve1 . prepare $ file)
     print (test . prepare $ file)
     --putStrLn $ "Part 2 :" ++ (show . solve2 . prepare $ file)
+
 
 
 
