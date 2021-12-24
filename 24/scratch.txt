@@ -1,0 +1,92 @@
+digit 14 - type: 1
+add x 14
+add y 8
+
+digit 13 - type: 1
+add x 13
+add y 8
+
+digit 12 - type: 1
+add x 13
+add y 3
+
+digit 11 - type: 1
+add x 12
+add y 10
+
+digit 10 - type: 2
+add x -12
+add y 8
+
+digit 9 - type: 1
+add x 12
+add y 8
+
+digit 8 - type 2
+add x -2
+add y 8
+
+digit 7 - type: 2
+add x -11
+add y 5
+
+digit 6 - type: 1
+add x 13
+add y 9
+
+digit 5 - type: 1
+add x 14
+add y 3
+
+digit 4 - type: 2
+add x 0
+add y 4
+
+digit 3 - type: 2
+add x -12
+add y 9
+
+digit 2 - type: 2
+add x -13
+add y 2
+
+digit 1 - type: 2
+add x -6
+add y 7
+
+
+p = z % 26 + n /= w
+q = 25*p + 1
+r = (w + m)*p
+z = z*(25*p+1)+(w+m)*p
+or
+z = z*(25*p+1)/26 + (w + m)*p
+----------14:
+p = 1
+z = [9,17]
+----------13:
+p = 1
+z = [26*9 + 9, 26*17 + 17]
+----------12:
+p = 1
+z = [26*(27*9)+4, 26*(27*17)+12]
+----------11:
+p = 1
+z = [26*(26*(27*9)+4)+11, 26*(26*(27*17)+12)+19]
+----------10:
+p = 1/0
+if p = 0: z = [(26*(27*9)+4), (26*(27*17)+12)]
+if p = 1: z = [26*(26*(26*(27*9)+4)+11)-12, 26*(26*(26*(27*17)+12)+19)-12]
+----------9:
+p = z % 26 + n /= w
+p = -12+12
+z = z*(25*p+1)+(w+m)*p
+----------8:
+z = z*(25*p+1)/26 + (w + m)*p
+----------7:
+----------6:
+----------5:
+----------4:
+----------3:
+----------2:
+----------1:
